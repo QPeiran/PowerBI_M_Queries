@@ -4,7 +4,8 @@ let
     #"Promoted Headers" = Table.PromoteHeaders(Sheet1_Sheet, [PromoteAllScalars=true]),
     #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Start Time", type datetime}, {"Finish Time", type datetime}, {"Activity", type text}, {"Seq Code", type text}, {"Recipe Name", type text}, {"Break Reasons", type text}, {"Missing Ingredients", type text}, {"Kitting Line", type text}, {"Assembly Batch", type text}, {"Event Shift", type text}, {"Team Leader", type text}, {"Pickers Count", Int64.Type}, {"Time Consumption", type number}, {"Week", type text}}),
     #"Filtered Rows" = Table.SelectRows(#"Changed Type", each ([Activity] <> "Factory Closed" and [Activity] <> "TBD") and ([Break Reasons] <> "move to other line" and [Break Reasons] <> "shift break")),
-    #"Added adjusted time consumption" = Table.AddColumn(#"Filtered Rows", "Time Consumption (Adjusted)", each if [#"Break Reasons"] = "clean up" and 
+    #"Replaced Value" = Table.ReplaceValue(#"Filtered Rows",null,each if [#"Activity"] = "Break" then "Unselected" else [#"Break Reasons"],Replacer.ReplaceValue,{"Break Reasons"}),
+    #"Added adjusted time consumption" = Table.AddColumn(#"Replaced Value", "Time Consumption (Adjusted)", each if [#"Break Reasons"] = "clean up" and 
 [#"Time Consumption"] >20
 then 20
 else 
@@ -39,9 +40,6 @@ else
 if [#"Break Reasons"] = "shortage of staff" and 
 [#"Time Consumption"] > 30
 then 30
-else
-if [#"Break Reasons"] = ""
-then [#"Time Consumption"]
 else 
 if [#"Activity"] = "Production" and [#"Time Consumption"] > 20 
 then 20
